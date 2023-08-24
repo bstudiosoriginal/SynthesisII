@@ -1,16 +1,44 @@
 import rich.table
 import rich.console
 import numpy as np
+import traceback
 
 
 def det(m):
     # determinant of 2x2 matrix
     return m[0][0] * m[1][1] - m[0][1] * m[1][0]
 
-def plot_sol(V, origin, lim_x=[-20, 20], lim_y=[-20, 20], scale=1):
+def plot_sol(V, origin, lim_x=[-20, 20], lim_y=[-20, 20], scale=0.09, labels=[]):
     import matplotlib.pyplot as plt
-    plt.quiver(*origin, V[:, 0], V[:, 1], angles='xy', scale_units='xy', scale=scale)
-    # plt.plot(V) 
+    colors = ['r', 'g', 'b', 'c', 'm', 'y']
+    from matplotlib.legend_handler import HandlerPatch
+    import matplotlib.patches as mpatches
+
+    def make_legend_arrow(legend, orig_handle,
+                        xdescent, ydescent,
+                        width, height, fontsize):
+        p = mpatches.FancyArrow(0, 0.5*height, width, 0, length_includes_head=True, head_width=0.75*height )
+        return p
+
+    
+    
+    # (origin)
+    arrows = []
+    for orig, u, v, i in zip(origin.T, V[:, 0], V[:, 1], range(len(V[:, 0]))):
+        # print(orig, u, v, i)
+        # q = plt.quiver(*orig, u, v, angles='xy', scale_units='xy', scale=scale, color=colors[i])
+        # plt.plot(V)
+        # print(q) 
+        # plt.quiverkey(q, X=0.3, Y=1+0.5*i, U=10, label=labels[i])
+        # plt.annotate(labels[i], [u+orig[0], v+orig[1]], orig, arrowprops={})
+        # plt.arrow(*orig, u, v)
+        arrow = plt.arrow(*orig, u, v, label=labels[i], color=colors[i], length_includes_head=True, width=0.008*(lim_y[1]-lim_y[0]))
+        arrows.append(arrow)
+    plt.legend(arrows, labels, handler_map={mpatches.FancyArrow : HandlerPatch(patch_func=make_legend_arrow),
+                })
+    plt.grid(True, color='0.95')
+    plt.minorticks_on()
+    # plt.legend()
     plt.xlim(lim_x)
     plt.ylim(lim_y)
     plt.show()
@@ -102,9 +130,9 @@ class System():
             console = rich.console.Console()
             console.print(self.table)
         except Exception:
-            print('You must solve first')
+            print('You must solve first, no table')
     
-    def plot(self):
+    def plot(self, precision=2):
         # origins of the vectors
         try:
             X = self.X
@@ -116,7 +144,7 @@ class System():
             Z5 = self.Z[4]
             Z6 = self.Z[5]
             l = np.array([[0, 0], [0, 0], [Z2.real, Z2.imag], [Z1.real, Z1.imag], [Z2.real, Z2.imag], [Z1.real+Z4.real, Z1.imag+Z4.imag]])
-
+            # dxdy = 
             # biggest point 
             MAX_POINT_X, MAX_POINT_Y = np.max([*(X+l.T[0]), 0]), np.max([*(Y+l.T[1]), 0])
             MIN_POINT_X, MIN_POINT_Y = np.min([*(X+l.T[0]), 0]), np.min([*(Y+l.T[1]), 0])
@@ -126,7 +154,8 @@ class System():
             # shift the origins
             # l -= np.array(np.abs(MAX_POINT_X-MIN_POINT_X)/2, np.abs(MAX_POINT_Y-MIN_POINT_Y)/2)
             # plot
-            plot_sol(np.vstack([X, Y]).T, l.T, [MIN_POINT_X-5, MAX_POINT_X+5], [MIN_POINT_Y-5, MAX_POINT_Y+5])
+            labels = [f'Z1 L={round(self.L[0], precision)}, {round(self.th[0], 1)}$^\circ$', f'Z2 L={round(self.L[1], precision)}, {round(self.th[1], 1)}$^\circ$', f'Z3 L={round(self.L[2], precision)}, {round(self.th[2], 1)}$^\circ$', f'Z4 L={round(self.L[3], precision)}, {round(self.th[3], 1)}$^\circ$', f'Z5 L={round(self.L[4], precision)}, {round(self.th[4], 1)}$^\circ$', f'Z6 L={round(self.L[5], precision)}, {round(self.th[5], 1)}$^\circ$']
+            plot_sol(np.vstack([X, Y]).T, l.T, [MIN_POINT_X-5, MAX_POINT_X+5], [MIN_POINT_Y-5, MAX_POINT_Y+5], 1, labels)
         except Exception:
-            print('You must solve first!!')
+            print('You must solve first!!', traceback.format_exc())
         
